@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dead Code Funeral</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0a;
+      --surface: rgba(10,14,20,0.82);
+      --card:    rgba(8,12,20,0.88);
+      --border:  #1a2a3a;
+      --gold:    #4a90d9;
+      --gold-dim:#2d6099;
+      --white:   #e8f0f8;
+      --muted:   #6888a8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg) url('bob-gravedigger.png') center center / cover no-repeat fixed;
+      color: var(--white);
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── dark overlay so text stays readable ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* everything above the overlay */
+    .hero, .divider, .input-section, #error-msg, #loading,
+    #stats, #results-section, footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── hero ── */
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 60px 24px 24px;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+    }
+
+    .hero-text { flex: 1; }
+
+    .hero-icon { font-size: 3.2rem; line-height: 1; }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 32px rgba(74,144,217,0.5);
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      font-style: italic;
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 1.05rem;
+    }
+
+    /* ── divider ── */
+    .divider {
+      max-width: 860px;
+      margin: 0 auto 36px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--gold-dim);
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      font-family: 'Cinzel', serif;
+      text-transform: uppercase;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim));
+    }
+    .divider::after { background: linear-gradient(90deg, var(--gold-dim), transparent); }
+
+    /* push results down past Bob's body (roughly center of viewport) */
+    #stats, #results-section { margin-top: 0; }
+
+    /* ── input section ── */
+    .input-section {
+      max-width: 860px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 6px 6px 20px;
+    }
+
+    .input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--white);
+      font-family: 'Crimson Text', serif;
+      font-size: 1.05rem;
+      padding: 8px 0;
+    }
+    .input-row input::placeholder { color: var(--muted); }
+
+    .btn-funeral {
+      background: var(--gold);
+      color: #0a0a0a;
+      border: none;
+      border-radius: 3px;
+      padding: 10px 26px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-funeral:hover { background: #5da0e8; box-shadow: 0 0 18px rgba(74,144,217,0.5); }
+    .btn-funeral:disabled { background: var(--gold-dim); cursor: not-allowed; }
+
+    /* ── loading ── */
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--gold);
+      font-style: italic;
+      font-size: 1.15rem;
+      animation: flicker 2.4s infinite;
+    }
+    @keyframes flicker {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.55; }
+    }
+
+    /* ── stats bar ── */
+    #stats {
+      display: none;
+      max-width: 860px;
+      margin: 0 auto 40px;
+      padding: 0 24px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .stat-number {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: 'Cinzel', serif;
+      margin-top: 6px;
+    }
+
+    /* ── results ── */
+    #results-section {
+      display: none;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .section-heading {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      color: var(--gold-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── dead code card ── */
+    .dead-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold-dim);
+      border-radius: 4px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
+      transition: border-left-color 0.25s;
+    }
+    .dead-card:hover { border-left-color: var(--gold); }
+
+    .card-top {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .card-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      color: var(--gold);
+      font-weight: 700;
+    }
+    .type-badge {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: rgba(192,160,96,0.12);
+      color: var(--gold-dim);
+      border: 1px solid var(--gold-dim);
+      border-radius: 2px;
+      padding: 2px 8px;
+    }
+
+    .card-meta {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 6px;
+      font-style: italic;
+    }
+    .card-meta span { color: #7090b0; }
+
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-eulogy {
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--gold-dim);
+      border-radius: 3px;
+      padding: 6px 18px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-eulogy:hover { border-color: var(--gold); color: var(--gold); background: rgba(74,144,217,0.08); }
+    .btn-eulogy:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .eulogy-text {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-style: italic;
+      color: #b0a088;
+      line-height: 1.75;
+      font-size: 1rem;
+    }
+    .eulogy-text.visible { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+    /* ── final button ── */
+    #hold-funeral {
+      display: none;
+      text-align: center;
+      margin: 48px 0 32px;
+    }
+    .btn-hold {
+      background: transparent;
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      border-radius: 4px;
+      padding: 18px 48px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-shadow: 0 0 20px rgba(192,160,96,0.4);
+      box-shadow: 0 0 0 rgba(192,160,96,0);
+    }
+    .btn-hold:hover {
+      background: rgba(192,160,96,0.08);
+      box-shadow: 0 0 32px rgba(192,160,96,0.3);
+    }
+
+    /* ── ceremony overlay ── */
+    #ceremony {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+      text-align: center;
+      padding: 40px;
+    }
+    #ceremony.active { display: flex; animation: fadeIn 0.6s ease; }
+    .ceremony-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      color: var(--gold);
+      text-shadow: 0 0 48px rgba(192,160,96,0.6);
+      font-weight: 900;
+    }
+    .ceremony-text {
+      color: var(--muted);
+      font-style: italic;
+      max-width: 540px;
+      font-size: 1.1rem;
+    }
+    .btn-close {
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--gold-dim);
+      padding: 10px 30px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border-radius: 3px;
+      margin-top: 16px;
+    }
+    .btn-close:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* ceremony overlay needs its own z-index above body::before */
+    #ceremony { z-index: 100; }
+
+    /* ── error ── */
+    .error-msg {
+      background: rgba(180,40,40,0.12);
+      border: 1px solid rgba(180,40,40,0.4);
+      color: #c07070;
+      border-radius: 4px;
+      padding: 14px 20px;
+      font-style: italic;
+      font-size: 0.95rem;
+      margin: 0 24px 24px;
+      max-width: 860px;
+      margin-left: auto;
+      margin-right: auto;
+      display: none;
+    }
+
+    /* ── footer ── */
+    footer {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 20px 24px 32px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+
+    @media (max-width: 560px) {
+      .hero { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .input-row { flex-direction: column; padding: 12px; }
+      .card-bottom { flex-direction: column; align-items: flex-start; }
+    }
+
+    /* large-viewport: push content away from Bob's center position */
+    @media (min-height: 700px) {
+      .input-section { margin-bottom: 0; }
+      #stats, #results-section { margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<div class="hero">
+  <div class="hero-text">
+    <div class="hero-icon">⚰️</div>
+    <h1>Dead Code Funeral</h1>
+    <p class="subtitle">Every codebase has secrets.<br>Today, we lay them to rest.</p>
+  </div>
+
+</div>
+
+<div class="divider">Memento Mori Codicis</div>
+
+<!-- ═══════════════════════════ INPUT ══════════════════════════ -->
+<div class="input-section">
+  <div class="input-row">
+    <input type="text" id="repo-input" placeholder="Enter the repo of the deceased...  e.g. https://github.com/user/repo" />
+    <button class="btn-funeral" id="start-btn" onclick="startFuneral()">Begin the Funeral</button>
+  </div>
+</div>
+
+<div id="error-msg" class="error-msg"></div>
+<div id="loading">🕯️ Summoning the spirits of dead code...</div>
+
+<!-- ═══════════════════════════ STATS ══════════════════════════ -->
+<div id="stats">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number" id="stat-total">0</div>
+      <div class="stat-label">Total Departed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-functions">0</div>
+      <div class="stat-label">Lost Functions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-variables">0</div>
+      <div class="stat-label">Unused Variables</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-imports">0</div>
+      <div class="stat-label">Forgotten Imports</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ RESULTS ═══════════════════════ -->
+<div id="results-section">
+  <p class="section-heading">The Deceased</p>
+  <div id="cards-container"></div>
+  <div id="hold-funeral">
+    <button class="btn-hold" onclick="holdFuneral()">⚰️ &nbsp;HOLD THE FUNERAL&nbsp; ⚰️</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CEREMONY ══════════════════════ -->
+<div id="ceremony">
+  <div style="font-size:4rem;">⚰️</div>
+  <div class="ceremony-title">The Funeral Has Been Held</div>
+  <div class="ceremony-text">
+    The dead have been eulogized. The code has been committed to the void.<br>
+    May your repository rest lighter, and your coverage climb higher.
+  </div>
+  <div style="color: #2d6099; font-style: italic; font-size: 0.9rem;">
+    — In loving memory of all branches never merged —
+  </div>
+  <button class="btn-close" onclick="closeCeremony()">Close the Casket</button>
+</div>
+
+<footer>Dead Code Funeral &nbsp;·&nbsp; Powered by vulture &nbsp;·&nbsp; Buried with dignity · myigitkorkmaz</footer>
+
+<script>
+  const API = 'http://localhost:5001';
+  let totalItems = 0;
+  let eulogiesRead = 0;
+
+  function show(id)  { document.getElementById(id).style.display = ''; }
+  function hide(id)  { document.getElementById(id).style.display = 'none'; }
+  function block(id) { document.getElementById(id).style.display = 'block'; }
+  function flex(id)  { document.getElementById(id).style.display = 'flex'; }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = '🪦 ' + msg;
+    el.style.display = 'block';
+  }
+  function clearError() {
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  async function startFuneral() {
+    const url = document.getElementById('repo-input').value.trim();
+    if (!url) { showError('Please enter a GitHub repository URL.'); return; }
+
+    clearError();
+    document.getElementById('start-btn').disabled = true;
+    hide('stats');
+    hide('results-section');
+    block('loading');
+
+    try {
+      const res = await fetch(API + '/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ github_url: url })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unknown error from server');
+      renderResults(data);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      hide('loading');
+      document.getElementById('start-btn').disabled = false;
+    }
+  }
+
+  function renderResults(data) {
+    const items = data.results || [];
+    totalItems = items.length;
+    eulogiesRead = 0;
+
+    // stats
+    document.getElementById('stat-total').textContent     = totalItems;
+    document.getElementById('stat-functions').textContent = items.filter(i => i.type.includes('function')).length;
+    document.getElementById('stat-variables').textContent = items.filter(i => i.type.includes('variable')).length;
+    document.getElementById('stat-imports').textContent   = items.filter(i => i.type.includes('import')).length;
+    block('stats');
+
+    // cards
+    const container = document.getElementById('cards-container');
+    container.innerHTML = '';
+
+    if (items.length === 0) {
+      container.innerHTML = '<p style="color:var(--muted);font-style:italic;text-align:center;padding:40px 0;">No dead code found. Either the codebase is immaculate, or the spirits are hiding.</p>';
+      block('results-section');
+      return;
+    }
+
+    items.forEach((item, idx) => {
+      const card = document.createElement('div');
+      card.className = 'dead-card';
+      card.id = 'card-' + idx;
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="card-name">${escHtml(item.name)}</span>
+          <span class="type-badge">${escHtml(item.type)}</span>
+        </div>
+        <div class="card-meta">
+          <span>${escHtml(item.filename)}</span> &nbsp;·&nbsp; line <span>${item.line}</span>
+          ${item.size > 1 ? ' &nbsp;·&nbsp; <span>' + item.size + ' lines</span>' : ''}
+        </div>
+        <div class="card-bottom">
+          <button class="btn-eulogy" id="eulogy-btn-${idx}" onclick="readEulogy(${idx}, '${escAttr(item.name)}', '${escAttr(item.type)}', '${escAttr(item.filename)}', ${item.line})">
+            🕯 Read Eulogy
+          </button>
+        </div>
+        <div class="eulogy-text" id="eulogy-${idx}"></div>
+      `;
+      container.appendChild(card);
+    });
+
+    hide('hold-funeral');
+    block('results-section');
+  }
+
+  async function readEulogy(idx, name, type, filename, line) {
+    const btn = document.getElementById('eulogy-btn-' + idx);
+    const box = document.getElementById('eulogy-' + idx);
+
+    btn.disabled = true;
+    btn.textContent = '🕯 Speaking...';
+
+    try {
+      const res = await fetch(API + '/eulogize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type, filename, line })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'The spirits are silent.');
+      box.textContent = '" ' + data.eulogy + ' "';
+      box.classList.add('visible');
+      btn.textContent = '✝ Eulogized';
+
+      eulogiesRead++;
+      if (eulogiesRead >= totalItems) {
+        block('hold-funeral');
+        document.getElementById('hold-funeral').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (err) {
+      btn.textContent = '🕯 Read Eulogy';
+      btn.disabled = false;
+      box.textContent = 'The eulogy could not be delivered: ' + err.message;
+      box.classList.add('visible');
+    }
+  }
+
+  function holdFuneral() {
+    document.getElementById('ceremony').classList.add('active');
+  }
+
+  function closeCeremony() {
+    document.getElementById('ceremony').classList.remove('active');
+  }
+
+  // allow Enter key in input
+  document.getElementById('repo-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') startFuneral();
+  });
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function escAttr(s) {
+    return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  }
+</script>
+</body>
+</html>

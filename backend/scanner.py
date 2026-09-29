@@ -7,7 +7,8 @@ import vulture
 
 def clone_repo(github_url: str) -> str:
     """Clone a GitHub repo into a temp directory and return the path."""
-    temp_dir = tempfile.mkdtemp(prefix="dead_code_funeral_")
+    # realpath: on macOS /var is a symlink to /private/var, which breaks relpath below
+    temp_dir = os.path.realpath(tempfile.mkdtemp(prefix="dead_code_funeral_"))
     git.Repo.clone_from(github_url, temp_dir)
     return temp_dir
 
